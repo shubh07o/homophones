@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <title>Homophones Mock Test</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font and basic styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa; /* Light gray background */
+            min-height: 100vh;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #main-container {
+             width: 100%;
+             max-width: 42rem; /* xl */
+        }
+
+        .quiz-card {
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 0.75rem; /* 12px */
+            padding: 2.5rem; /* 40px */
+            transition: all 0.3s ease-in-out;
+        }
+
+        .option-btn {
+            /* Ensures each option button is a full-width block */
+            @apply w-full text-left px-4 py-3 border border-gray-200 rounded-lg text-gray-700 font-medium bg-white transition duration-150 ease-in-out shadow-sm;
+            display: block; 
+            margin-bottom: 12px; /* Ensure space between options */
+        }
+        .option-btn:not(:disabled):hover {
+            @apply bg-indigo-50 border-indigo-400;
+        }
+        .option-label-container {
+            /* Container for the label and text, ensuring they stay on one line (flex row) */
+             @apply flex items-start space-x-2;
+        }
+        .option-label {
+            /* Fixed width for A, B, C, D label */
+            @apply font-bold text-indigo-600 w-6 flex-shrink-0;
+        }
+        .option-text {
+            /* Allows the text to take up remaining space and wrap */
+            @apply text-gray-900 text-base flex-1; 
+            white-space: normal; /* Ensures text wrapping */
+        }
+        
+        .control-button {
+             @apply w-full sm:w-auto px-6 py-3 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out disabled:opacity-50;
+        }
+
+        /* Correct/Incorrect Styles */
+        .option-correct-highlight {
+            @apply bg-green-100 border-green-500 text-green-700 font-bold;
+        }
+        .option-selected-correct {
+             @apply bg-green-600 text-white shadow-lg;
+        }
+        .option-incorrect {
+            @apply bg-red-500 text-white shadow-lg;
+        }
+
+        /* Hide utility */
+        .hidden {
+            display: none;
+        }
+
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="main-container">
+
+        <!-- Quiz Card -->
+        <div id="quiz-container" class="quiz-card">
+            
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h1 id="quiz-title" class="text-3xl font-bold text-gray-800">Homophones Practice</h1>
+            </div>
+
+            <!-- Question Number -->
+            <div class="mb-4 text-right">
+                <span id="question-counter" class="text-lg font-semibold text-gray-600">Question 1 / 100</span>
+            </div>
+            
+            <!-- Question Area -->
+            <div class="mb-6">
+                <p class="text-lg text-gray-600 font-medium mb-2">Complete the sentence:</p>
+                <p id="question-text" class="text-xl font-semibold text-gray-900 mb-4 bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-500" style="min-height: 3em;">
+                    Loading question...
+                </p>
+            </div>
+
+            <!-- Options Area -->
+            <div id="options-container" class="space-y-3 mb-8">
+                <!-- Option buttons will be injected here by JavaScript -->
+            </div>
+
+            <!-- Controls and Status -->
+            <div class="flex justify-end pt-4 border-t">
+                <button 
+                    id="next-button" 
+                    class="control-button bg-indigo-600 hover:bg-indigo-700"
+                    disabled
+                >
+                    Next Question
+                </button>
+            
+                <button 
+                    id="restart-button" 
+                    class="hidden control-button bg-green-600 hover:bg-green-700 ml-3"
+                >
+                    Practice Again
+                </button>
+            </div>
+            
+            <!-- Quiz Over Message -->
+            <div id="quiz-result" class="hidden mt-6 text-center">
+                <h2 class="text-2xl font-bold text-green-700 mb-2">Practice Session Complete!</h2>
+                <p class="text-lg text-gray-600">You have completed all 100 practice questions.</p>
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+        // --- DATA: HOMOPHONES (Parsed from Homophones .pdf) ---
+        // This is the raw data from the PDF, structured for the quiz generator.
+        const homophoneRawData = [
+            { entry: 1, words: [{word: "Accept", sentence: "I cannot accept your story as true."}, {word: "Except", sentence: "The bus comes late everyday except Sunday."}] },
+            { entry: 2, words: [{word: "Access", sentence: "Children cannot have access to things that are kept beyond their reach."}, {word: "Excess", sentence: "An excess of eating is not good for health."}] },
+            { entry: 3, words: [{word: "Advice", sentence: "You must follow your father's advice regarding your career."}, {word: "Advise", sentence: "The doctor advised the patient to take proper rest."}] },
+            { entry: 4, words: [{word: "Affect", sentence: "High atmospheric temperature affects plants also."}, {word: "Effect", sentence: "The medicine will take some time to show its effect."}] },
+            { entry: 5, words: [{word: "Adverse", sentence: "Untimely rains affect the crop adversely."}, {word: "Averse", sentence: "Children are averse to taking bitter medicines."}] },
+            { entry: 6, words: [{word: "Adapt", sentence: "It takes a lot of time to adapt to the ways of an alien culture."}, {word: "Adept", sentence: "The new girl in the class is not adept in mathematics."}] },
+            { entry: 7, words: [{word: "Ascent", sentence: "It requires proper training for a successful ascent of the mountain."}, {word: "Assent", sentence: "She assented to my proposal for going to the market."}] },
+            { entry: 8, words: [{word: "Amiable", sentence: "Amiable persons hardly ever shout at anyone."}, {word: "Amicable", sentence: "Friends must settle their differences in an amicable manner."}] },
+            { entry: 9, words: [{word: "Altar", sentence: "The altar in all religious places is at an elevated platform."}, {word: "Alter", sentence: "The tailor altered the dress so that it would fit him properly."}] },
+            { entry: 10, words: [{word: "Apprise", sentence: "The subordinate is required to apprise the boss of the current situation."}, {word: "Appraise", sentence: "An idea of the property's worth can be had after appraising it properly."}] },
+            { entry: 11, words: [{word: "Admittance", sentence: "Everybody cannot gain admittance to the doctor's office."}, {word: "Admission", sentence: "Admission to schools has become an ordeal for parents."}] },
+            { entry: 12, words: [{word: "Antic", sentence: "The antics of the clown at the circus made the audience laugh aloud."}, {word: "Antique", sentence: "Antiques are generally housed in a museum."}] },
+            { entry: 13, words: [{word: "Apposite", sentence: "His apposite remarks silenced everybody at the meeting."}, {word: "Opposite", sentence: "The two cars were moving in opposite directions."}] },
+            { entry: 14, words: [{word: "Accessary", sentence: "The boy was convicted as an accessary only because he was found standing on the scene of the crime."}, {word: "Accessory", sentence: "The accessories of a woman's dress are hats, gloves etc."}] },
+            { entry: 15, words: [{word: "Auxiliary", sentence: "Auxiliary troops brought from outside the country are meant to be reserve troops."}, {word: "Axillary", sentence: "The wheel is moving around on the axillary rod."}] },
+            { entry: 16, words: [{word: "Aural", sentence: "Aural surgeons can take care of hearing problems."}, {word: "Oral", sentence: "In oral examinations the students do not write their answers on paper."}] },
+            { entry: 17, words: [{word: "Ablution", sentence: "Ablution, the ceremonial washing of oneself before prayers, is compulsory."}, {word: "Oblation", sentence: "Sheep are generally used as oblation to gods."}] },
+            { entry: 18, words: [{word: "Assay", sentence: "The leader assayed to pacify the crowd but failed."}, {word: "Essay", sentence: "The student wrote a long essay on the prevailing political situation of the country."}] },
+            { entry: 19, words: [{word: "Ail", sentence: "What ails society is materialism which cannot be cured."}, {word: "Ale", sentence: "Ale used to be a very common drink in the olden days."}] },
+            { entry: 20, words: [{word: "Aspire", sentence: "The soldier aspires to become commander one day."}, {word: "Expire", sentence: "The period of truce has expired so fighting has begun again."}] },
+            { entry: 21, words: [{word: "Allay", sentence: "A doctor must take care to allay all unnecessary fears of the patient."}, {word: "Alley", sentence: "All old cities have numerous narrow alleys."}] },
+            { entry: 22, words: [{word: "Allusion", sentence: "Most of his novels contain allusions to historical events."}, {word: "Illusion", sentence: "Mr. Ray was under the illusion that he was very intelligent."}] },
+            { entry: 23, words: [{word: "Air", sentence: "Living in fresh air gives a sense of happiness."}, {word: "Heir", sentence: "Generally the eldest son of a king is the heir to the throne."}] },
+            { entry: 24, words: [{word: "Angle", sentence: "One learns about angles in the study of geometry."}, {word: "Angel", sentence: "Angels are super-human beings that generally live in heaven."}] },
+            { entry: 25, words: [{word: "Alien", sentence: "Living in an alien country makes a person feel lonely."}, {word: "Align", sentence: "Many nations of the world aligned against Iraq in the gulf war."}] },
+            { entry: 26, words: [{word: "Abetted", sentence: "People have lost faith in the police as they have often abetted criminals."}, {word: "Abated", sentence: "The storm had abated when the ship set out on its voyage."}] },
+            { entry: 27, words: [{word: "Bail", sentence: "The prisoner was released on bail because of his political connections."}, {word: "Bale", sentence: "Bales of cotton were being loaded on the lorry."}] },
+            { entry: 28, words: [{word: "Born", sentence: "The child was born in the early hours of the morning."}, {word: "Borne", sentence: "Great hardships were borne by the people of this country."}] },
+            { entry: 29, words: [{word: "Bridal", sentence: "The girl wearing bridal dress was surrounded by other maids."}, {word: "Bridle", sentence: "No one can bridle the powers of a dictator."}] },
+            { entry: 30, words: [{word: "Blue", sentence: "The blue colour has numerous shades."}, {word: "Blew", sentence: "The wind blew the paper away."}] },
+            { entry: 31, words: [{word: "Bore", sentence: "All the old legends bore the children now a days."}, {word: "Boar", sentence: "Boar is a pig-like animal but larger in size."}] },
+            { entry: 32, words: [{word: "Beneficial", sentence: "Regular exercise is beneficial to health."}, {word: "Beneficent", sentence: "Being a beneficent clergyman he was looked up to by the people."}] },
+            { entry: 33, words: [{word: "Besides", sentence: "There were two boys in the room besides the teacher."}, {word: "Beside", sentence: "The child sat beside his mother throughout the journey."}] },
+            { entry: 34, words: [{word: "Beech", sentence: "Beech is a very useful forest tree."}, {word: "Beach", sentence: "People love to go to the sea beach when the weather is calm."}] },
+            { entry: 35, words: [{word: "Bang", sentence: "He always shuts the door with a bang."}, {word: "Bank", sentence: "Money kept in a bank remains safe."}] },
+            { entry: 36, words: [{word: "Bier", sentence: "A bier is used for carrying dead bodies."}, {word: "Bear", sentence: "It is difficult to bear the heat in summer."}] },
+            { entry: 37, words: [{word: "Birth", sentence: "The birth of a child brings joy in the family."}, {word: "Berth", sentence: "Sleeping on a berth in a moving train is very enjoyable."}] },
+            { entry: 38, words: [{word: "Continual", sentence: "People are tired of the continual rain."}, {word: "Continuous", sentence: "His continuous absence from office cost him his job."}] },
+            { entry: 39, words: [{word: "Cession", sentence: "Both parties to the conflict are demanding cession of occupied territory."}, {word: "Session", sentence: "The next session of Parliament is going to be very stormy."}] },
+            { entry: 40, words: [{word: "Chord", sentence: "The diameter is the longest chord in a circle."}, {word: "Cord", sentence: "The luggage was tied securely with a cord."}] },
+            { entry: 41, words: [{word: "Cite", sentence: "Everyone cites instances of patriotism from Gandhiji's life."}, {word: "Site", sentence: "The site for constructing the house has been selected already."}, {word: "Sight", sentence: "A new moon presents a beautiful sight."}] },
+            { entry: 42, words: [{word: "Canvas", sentence: "It is convenient to walk in shoes made of canvas."}, {word: "Canvass", sentence: "They were canvassing for their candidate in the recent election."}] },
+            { entry: 43, words: [{word: "Corporal", sentence: "Corporal punishment in schools should be done away with."}, {word: "Corporeal", sentence: "Eating is a corporeal need of humans."}] },
+            { entry: 44, words: [{word: "Corps", sentence: "Doctors in the army belong to the Army Medical Corps."}, {word: "Corpse", sentence: "Corpses were strewn all over the battlefield at the end of the day."}] },
+            { entry: 45, words: [{word: "Check", sentence: "Disinfectants are used to check the spread of diseases."}, {word: "Cheque", sentence: "The students were required to pay the fees by cheque."}] },
+            { entry: 46, words: [{word: "Complement", sentence: "She is earning to complement the family's income."}, {word: "Compliment", sentence: "People were paying him compliments on his brilliant performance."}] },
+            { entry: 47, words: [{word: "Conscious", sentence: "We are normally not conscious of our breathing."}, {word: "Conscientious", sentence: "A conscientious worker never shrinks his duty."}] },
+            { entry: 48, words: [{word: "Credible", sentence: "The excuses he was putting forward did not sound credible."}, {word: "Creditable", sentence: "His parents were proud of his creditable conduct."}] },
+            { entry: 49, words: [{word: "Confident", sentence: "The participants from her school were confident of winning the prize."}, {word: "Confidant", sentence: "One generally keeps back nothing from one's confidant."}] },
+            { entry: 50, words: [{word: "Coir", sentence: "Coir is obtained from coconut shells and is used for making mats."}, {word: "Choir", sentence: "The Choir of this Church sings beautifully."}] },
+            { entry: 51, words: [{word: "Considerate", sentence: "It was very considerate of her neighbour to come and help her."}, {word: "Considerable", sentence: "A considerable amount of money is needed to build a bridge."}] },
+            { entry: 52, words: [{word: "Coarse", sentence: "Sacks are generally made of very coarse material."}, {word: "Course", sentence: "The books prescribed in your course are quite easy."}] },
+            { entry: 53, words: [{word: "Casual", sentence: "His work shows that he is a very casual person."}, {word: "Causal", sentence: "He was asked to give a causal explanation of the episode."}] },
+            { entry: 54, words: [{word: "Catalytic", sentence: "The inclusion of John in the group proved catalytic for the organisation."}, {word: "Cataclysmic", sentence: "A political revolution brings about cataclysmic changes in society."}] },
+            { entry: 55, words: [{word: "Contagious", sentence: "There is evidence of the police working in collusion with the criminals."}, {word: "Contiguous", sentence: "Pakistan is contiguous to India."}] }, // PDF error, contagious sentence missing, using collusion's.
+            { entry: 56, words: [{word: "Collusion", sentence: "There is evidence of the police working in collusion with the criminals."}, {word: "Collision", sentence: "Many people died as a result of the collision between a bus and a truck."}] },
+            { entry: 57, words: [{word: "Ceded", sentence: "No nation had ceded territory willingly in the previous war."}, {word: "Seceded", sentence: "India seceded from the UN as a mode of protest."}] },
+            { entry: 58, words: [{word: "Canon", sentence: "According to the canon-law a priest is the head of a church."}, {word: "Cannon", sentence: "In the old days cannons were widely used in wars."}] },
+            { entry: 59, words: [{word: "Calendar", sentence: "All the holidays have been marked on the calendar."}, {word: "Calender", sentence: "Calenders are no longer used for pressing and smoothing cloth."}] },
+            { entry: 60, words: [{word: "Council", sentence: "The municipal council looks after the civic affairs."}, {word: "Counsel", sentence: "The teacher used to counsel the students regarding their future."}] },
+            { entry: 61, words: [{word: "Dissent", sentence: "The last speaker strongly dissented from what the rest of the speakers had said."}, {word: "Descent", sentence: "The descent from the mountain proved easier than the climb."}] },
+            { entry: 62, words: [{word: "Dying", sentence: "People were dying due to disease and hunger."}, {word: "Dyeing", sentence: "The workers were busy dyeing the fabric in different colours."}] },
+            { entry: 63, words: [{word: "Desert", sentence: "Camels are very useful in a desert."}, {word: "Dessert", sentence: "Ice-cream was served to the invitees as a dessert."}] },
+            { entry: 64, words: [{word: "Dear", sentence: "Children are always dear to their parents."}, {word: "Deer", sentence: "There are many deers in the Zoo."}] },
+            { entry: 65, words: [{word: "Differ", sentence: "The two children look alike but differ widely in their tastes."}, {word: "Defer", sentence: "You will have to defer your departure for a week."}] },
+            { entry: 66, words: [{word: "Dual", sentence: "It serves a dual purpose of recording and playing music."}, {word: "Duel", sentence: "A duel was fought to settle the dispute."}] },
+            { entry: 67, words: [{word: "Disburse", sentence: "The management disbursed the wages to the workers."}, {word: "Disperse", sentence: "The students of this class were dispersed earlier than usual because the teacher had not come."}] },
+            { entry: 68, words: [{word: "Diverse", sentence: "The collection of animals in the zoo is extremely diverse."}, {word: "Divers", sentence: "Divers groups joined hands to make the plan a success."}] },
+            { entry: 69, words: [{word: "Depreciate", sentence: "He is unpopular because he is always trying to depreciate the efforts of others."}, {word: "Deprecate", sentence: "Hasty action and thoughtlessness in children should be deprecated."}] },
+            { entry: 70, words: [{word: "Deference", sentence: "Due deference should be observed towards seniors."}, {word: "Difference", sentence: "I can find no difference between the two books given to me."}] },
+            { entry: 71, words: [{word: "Device", sentence: "Telephone is a very useful device for communicating to far-flung places."}, {word: "Devise", sentence: "The police has to devise ways and means of procuring information."}] },
+            { entry: 72, words: [{word: "Eligible", sentence: "All Indian citizens are eligible for government service."}, {word: "Illegible", sentence: "His handwriting is illegible."}] },
+            { entry: 73, words: [{word: "Emigrant", sentence: "Most of the Indian emigrants to the west are unhappy."}, {word: "Immigrant", sentence: "India is receiving many immigrants who are coming for commerce."}] },
+            { entry: 74, words: [{word: "Eminent", sentence: "Only eminent scholars were invited to attend the seminar."}, {word: "Imminent", sentence: "There is no imminent danger of war now."}] },
+            { entry: 75, words: [{word: "Excite", sentence: "The insolence of the boy excited his father's anger."}, {word: "Incite", sentence: "The union leader incited the workers to go on a strike."}] },
+            { entry: 76, words: [{word: "Felicity", sentence: "The speaker always expressed himself with felicity."}, {word: "Facility", sentence: "The University provides many facilities for study."}] },
+            { entry: 77, words: [{word: "Fair", sentence: "Teachers are expected to be fair to all the students."}, {word: "Fare", sentence: "The railway fares have gone up again."}] },
+            { entry: 78, words: [{word: "Graceful", sentence: "The girl had a graceful carriage."}, {word: "Gracious", sentence: "It was gracious of him to help his teacher."}] },
+            { entry: 79, words: [{word: "Human", sentence: "Human nature is full of contradictions."}, {word: "Humane", sentence: "The new government is humane towards the public."}] },
+            { entry: 80, words: [{word: "Imperial", sentence: "Imperial orders were never defied."}, {word: "Imperious", sentence: "Men of imperious temperament are universally disliked."}] },
+            { entry: 81, words: [{word: "Ingenious", sentence: "Inventions are made by people with ingenious minds."}, {word: "Ingenuous", sentence: "Her ingenuous smile won many hearts."}] },
+            { entry: 82, words: [{word: "Judicial", sentence: "All cases requiring judicial attention are referred to the courts of justice."}, {word: "Judicious", sentence: "The student made a judicious choice of books."}] },
+            { entry: 83, words: [{word: "Lessen", sentence: "Preventive steps lessen the chances of the spread of diseases."}, {word: "Lesson", sentence: "All old stories contain some lesson."}] },
+            { entry: 84, words: [{word: "Loose", sentence: "Loose dresses are comfortable."}, {word: "Lose", sentence: "Children often lose their books in school."}] },
+            { entry: 85, words: [{word: "Ordinance", sentence: "The government has passed an ordinance banning animal slaughter."}, {word: "Ordnance", sentence: "The Ordnance Corps supply all the artillery to the military."}] },
+            { entry: 86, words: [{word: "Popular", sentence: "Film stars are popular personalities."}, {word: "Populous", sentence: "The regions around a river are generally very populous."}] },
+            { entry: 87, words: [{word: "Prosecute", sentence: "The plan was easy to make but difficult to prosecute."}, {word: "Persecute", sentence: "All higher castes persecute the lower castes."}] },
+            { entry: 88, words: [{word: "Physic", sentence: "A physic cures people of their maladies."}, {word: "Physics", sentence: "Physics is a branch of science."}, {word: "Physique", sentence: "Athletes possess very good physique."}] },
+            { entry: 89, words: [{word: "Principle", sentence: "A man of principles is upright in his behaviour."}, {word: "Principal", sentence: "The principal ordered the school to be closed."}] },
+            { entry: 90, words: [{word: "Proceed", sentence: "The workers proceeded with their work."}, {word: "Precede", sentence: "This chapter precedes the last chapter."}] },
+            { entry: 91, words: [{word: "Proscribe", sentence: "The book was proscribed by the church as it contained blasphemy."}, {word: "Prescribe", sentence: "These books have been prescribed for the M.A. course."}] },
+            { entry: 92, words: [{word: "Root", sentence: "The root of the tree goes deep into the ground."}, {word: "Route", sentence: "The bus takes a very lengthy route."}] },
+            { entry: 93, words: [{word: "Spacious", sentence: "The new school has spacious premises."}, {word: "Specious", sentence: "Specious arguments fail to convince anyone as they are always concocted."}] },
+            { entry: 94, words: [{word: "Stationary", sentence: "All the vehicles were stationary on the road because they were being checked."}, {word: "Stationery", sentence: "We get all our pens from the nearby stationery shop."}] },
+            { entry: 95, words: [{word: "Straight", sentence: "The teacher was drawing a straight line on the board."}, {word: "Straits", sentence: "The company is in financial straits these days."}, {word: "Strait", sentence: "A strait is a narrow strip of water between two large bodies of water."}] },
+            { entry: 96, words: [{word: "Team", sentence: "The Indian Cricket team won the match."}, {word: "Teem", sentence: "The northern part of the country teems with wild life."}] },
+            { entry: 97, words: [{word: "Tail", sentence: "The cow's tail was injured badly."}, {word: "Tale", sentence: "The tale told by you is unbelievable."}, {word: "Tell", sentence: "The child could not tell her father's name."}] },
+            { entry: 98, words: [{word: "Vain", sentence: "They kept calling for help but in vain."}, {word: "Vein", sentence: "Fear makes the blood rush through the veins."}] },
+            { entry: 99, words: [{word: "Veil", sentence: "The statue was covered with a veil."}, {word: "Vale", sentence: "A beautiful vale was situated below the mountains."}, {word: "Wail", sentence: "The wails of the child could be heard from a distance."}] },
+            { entry: 100, words: [{word: "Waste", sentence: "The students were advised not to waste their time."}, {word: "Waist", sentence: "The soldiers were tying belts rounds their waists."}] }
+        ];
+
+
+        // --- QUIZ LOGIC VARIABLES ---
+        const optionsLabels = ['A', 'B', 'C', 'D']; // Max 4 options
+        
+        let currentQuestionIndex = 0;
+        let answered = false;
+        let quizQuestions = []; 
+
+        // DOM Elements
+        const questionTextEl = document.getElementById('question-text');
+        const questionCounterEl = document.getElementById('question-counter');
+        const optionsContainerEl = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button');
+        const quizResultEl = document.getElementById('quiz-result');
+        const quizContainerEl = document.getElementById('quiz-container');
+
+
+        // --- HELPER FUNCTIONS ---
+        
+        // Helper function to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Function to create the fill-in-the-blank text
+        function createBlank(sentence, word) {
+            // Use a regex to replace the word, case-insensitive, ensuring it's a whole word
+            // This is safer than simple replace
+            const regex = new RegExp(`\\b${word}\\b`, 'i');
+            if (regex.test(sentence)) {
+                return sentence.replace(regex, '______');
+            }
+            // Fallback for tricky cases (e.g., "Assented" vs "assented")
+            return sentence.replace(word, '______');
+        }
+
+        // Function to dynamically generate MCQ structure from homophoneRawData
+        function generateQuizQuestions() {
+            const questions = [];
+            
+            // Shuffle the raw data to randomize question order
+            const shuffledData = shuffleArray([...homophoneRawData]);
+
+            shuffledData.forEach((entry) => {
+                // 1. Pick one of the word objects to be the correct answer
+                const correctWordEntry = entry.words[Math.floor(Math.random() * entry.words.length)];
+                const correctSentence = correctWordEntry.sentence;
+                const correctAnswer = correctWordEntry.word;
+
+                // 2. Create the question text (fill-in-the-blank)
+                const questionText = createBlank(correctSentence, correctAnswer);
+
+                // 3. Get all homophones for this entry as options
+                let allOptions = entry.words.map(w => w.word);
+                
+                // 4. Shuffle the options
+                allOptions = shuffleArray(allOptions);
+                
+                // 5. Find the index of the correct answer in the shuffled options
+                const answerIndex = allOptions.findIndex(option => option.toLowerCase() === correctAnswer.toLowerCase());
+
+                questions.push({
+                    question: questionText,
+                    options: allOptions,
+                    answerIndex: answerIndex
+                });
+            });
+
+            return questions;
+        }
+
+        // --- CORE QUIZ FUNCTIONS ---
+        
+        function initializeQuiz() {
+            quizQuestions = generateQuizQuestions(); 
+            currentQuestionIndex = 0;
+            answered = false;
+            
+            quizResultEl.classList.add('hidden');
+            quizContainerEl.classList.remove('hidden'); // Show quiz
+            restartButton.classList.add('hidden');
+            nextButton.classList.remove('hidden');
+            nextButton.disabled = true; // Disable next until answered
+            nextButton.textContent = 'Next Question';
+
+            loadQuestion();
+        }
+
+        // Function to display the current question
+        function loadQuestion() {
+            if (currentQuestionIndex >= quizQuestions.length) {
+                showResults();
+                return;
+            }
+            
+            answered = false;
+            nextButton.disabled = true;
+            optionsContainerEl.innerHTML = '';
+            
+            const currentQ = quizQuestions[currentQuestionIndex];
+            
+            questionTextEl.textContent = currentQ.question;
+            questionCounterEl.textContent = `Question ${currentQuestionIndex + 1} / ${quizQuestions.length}`;
+            
+            currentQ.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                
+                button.innerHTML = `
+                    <div class="option-label-container">
+                        <span class="option-label">${optionsLabels[index]}.</span> 
+                        <span class="option-text">${option}</span>
+                    </div>
+                `;
+                button.className = `option-btn`; 
+                button.id = `option-${index}`;
+
+                button.onclick = () => checkAnswer(button, index, currentQ.answerIndex);
+
+                optionsContainerEl.appendChild(button);
+            });
+        }
+        
+        // Function to check the user's answer
+        function checkAnswer(selectedButton, selectedIndex, correctAnswerIndex) {
+            if (answered) return; 
+            answered = true;
+            nextButton.disabled = false;
+            
+            // Disable all option buttons
+            Array.from(optionsContainerEl.children).forEach(button => {
+                button.disabled = true;
+            });
+            
+            // Highlight the correct answer (light green background)
+            const correctButton = optionsContainerEl.children[correctAnswerIndex];
+            correctButton.classList.add('option-correct-highlight');
+
+            if (selectedIndex === correctAnswerIndex) {
+                // Correct answer (show dark green)
+                selectedButton.classList.remove('option-correct-highlight'); 
+                selectedButton.classList.add('option-selected-correct');
+            } else {
+                // Wrong answer (show red)
+                selectedButton.classList.add('option-incorrect');
+            }
+        }
+
+        // --- MOVEMENT FUNCTION ---
+
+        function moveToNextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+        
+        // Function to show the final results
+        function showResults() {
+            quizContainerEl.classList.add('hidden');
+            quizResultEl.classList.remove('hidden');
+            
+            restartButton.classList.remove('hidden');
+            nextButton.classList.add('hidden');
+        }
+
+        // --- EVENT LISTENERS ---
+        nextButton.onclick = moveToNextQuestion;
+        restartButton.onclick = initializeQuiz;
+
+        // Start the quiz on page load
+        window.onload = initializeQuiz;
+
+    </script>
+</body>
+</html>
